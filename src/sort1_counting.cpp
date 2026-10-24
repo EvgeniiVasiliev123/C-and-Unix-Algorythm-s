@@ -3,7 +3,6 @@
 // Задача: отсортировать оценки студентов за экзамен (целые числа от 0 до 100)
 // для большого потока (100 000 работ), чтобы построить итоговую ведомость.
 //
-// Сборка: g++ -std=c++17 -O2 src/sort1_counting.cpp -o sort1
 #include <algorithm>
 #include <chrono>
 #include <iostream>
@@ -13,17 +12,16 @@
 using namespace std;
 
 // Сортировка подсчётом.
-// maxValue - максимальное возможное значение (диапазон 0..maxValue).
+// maxValue - максимальное возможное значение 
 void countingSort(vector<int>& a, int maxValue) {
-    // 1. Массив счётчиков: count[v] - сколько раз встретилось значение v.
+    // 1. Массив счётчиков: co
     vector<int> count(maxValue + 1, 0);
-
-    // 2. Один проход по данным: считаем вхождения. O(n)
+    // 2.  считаем вхождения. O(n)
     for (int x : a) {
         count[x]++;
     }
 
-    // 3. Восстанавливаем массив: значение v записываем count[v] раз. O(n + k)
+    // 3. значение v записываем count[v] раз. O(n + k)
     int pos = 0;
     for (int v = 0; v <= maxValue; v++) {
         for (int j = 0; j < count[v]; j++) {
@@ -34,7 +32,7 @@ void countingSort(vector<int>& a, int maxValue) {
 
 int main() {
     const int N = 100000;      // количество оценок (n)
-    const int MAX_SCORE = 100; // диапазон значений 0..100 (k = 101)
+    const int MAX_SCORE = 100; // (k = 101)
 
     // Генерируем случайные оценки
     mt19937 gen(42);
@@ -49,7 +47,7 @@ int main() {
 
     double ms = chrono::duration<double, milli>(end - start).count();
 
-    // Проверка корректности
+    // Проверка 
     bool ok = is_sorted(scores.begin(), scores.end());
 
     cout << "Сортировка подсчётом" << endl;
