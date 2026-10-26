@@ -1,4 +1,7 @@
+# собранные программы
 sort1
 sort2
+tsp
+test_tsp
 *.exe
 *.o
