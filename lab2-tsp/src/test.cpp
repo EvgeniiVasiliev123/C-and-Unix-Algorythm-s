@@ -1,4 +1,4 @@
-// ЛР №2. Проверка: алгоритм ДП сравнивается с полным перебором на случайных данных.
+// ЛР №2. Проверка: алгоритм Дейкстры сравнивается с полным перебором на случайных данных.
 #include <iostream>
 #include <random>
 #include <vector>
@@ -20,18 +20,18 @@ int main() {
             TspResult res = solveTsp(pts);
             double brute = bruteForceLength(pts);
 
-            // 1. Маршрут начинается и заканчивается в точке 0, посещает все точки по одному разу
+            // 1. Маршрут начинается и заканчивается в точке 0 и посещает каждую точку один раз
             bool ok = res.route.size() == size_t(n) + 1 && res.route.front() == 0 && res.route.back() == 0;
             vector<int> seen(n, 0);
             for (size_t i = 0; ok && i + 1 < res.route.size(); i++) seen[res.route[i]]++;
             for (int i = 0; i < n; i++) if (seen[i] != 1) ok = false;
 
-            // 2. Длина совпадает с перебором (допуск из-за float в таблице ДП)
-            if (res.length < brute - 1e-9 || res.length > brute * (1 + 1e-4) + 1e-6) ok = false;
+            // 2. Длина совпадает с перебором
+            if (abs(res.length - brute) > 1e-9) ok = false;
 
             if (!ok) {
                 cout << "ОШИБКА: n = " << n << ", попытка " << trial
-                     << ", ДП = " << res.length << ", перебор = " << brute << endl;
+                     << ", Дейкстра = " << res.length << ", перебор = " << brute << endl;
                 return 1;
             }
             checked++;
