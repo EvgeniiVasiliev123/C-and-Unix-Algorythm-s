@@ -1,6 +1,7 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -O2 -Wall
+CXXFLAGS = -std=c++17 -O2 -Wall -Wextra -pedantic
 
+.PHONY: all test run clean
 all: tsp test_tsp
 
 tsp: src/main.cpp src/tsp.hpp
