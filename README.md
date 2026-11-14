@@ -31,14 +31,3 @@
     ├── Makefile
     └── README.md
 ```
-
-## Сборка
-
-Нужен компилятор с поддержкой C++17 (g++, clang++, MSVC). В каждой папке есть свой `Makefile`:
-
-```bash
-cd lab1-sorting && make run
-cd ../lab2-tsp  && make run
-```
-
-Подробности по каждой работе - в `README.md` соответствующей папки.
