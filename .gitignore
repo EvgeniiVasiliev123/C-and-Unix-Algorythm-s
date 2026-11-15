@@ -3,5 +3,6 @@ sort1
 sort2
 tsp
 test_tsp
+traffic
 *.exe
 *.o
