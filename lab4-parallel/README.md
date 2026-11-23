@@ -10,8 +10,7 @@ lab4-parallel/
 │   ├── main.py       # четыре способа обработки и измерение времени
 │   └── worker.py     # обработчик запросов для subprocess
 ├── doc/
-│   ├── report.md     # отчёт
-│   └── report.pdf    # отчёт в PDF
+│   └── report.md     # отчёт
 ├── Makefile
 └── README.md
 ```
