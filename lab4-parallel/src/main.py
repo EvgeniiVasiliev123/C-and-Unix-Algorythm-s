@@ -1,4 +1,6 @@
-"""ЛР №4. Сравнение последовательной и параллельной обработки запросов."""
+#!/usr/bin/env python3
+"""Лабораторная работа №4: сравнение способов обработки запросов."""
+
 import asyncio
 import subprocess
 import sys
@@ -6,128 +8,188 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-ACTIONS = {
-    1: ("Регистрация пользователя", 0.25),
-    2: ("Получение главной страницы", 0.15),
-    3: ("Просмотр списка пользователей", 0.01),
-}
-WORKER = Path(__file__).with_name("worker.py")
+
+# Типы запросов и условная загрузка CPU из задания.
+ACTIONS = [
+    {"name": "Регистрация пользователя", "cpu": 25},
+    {"name": "Главная страница", "cpu": 15},
+    {"name": "Список пользователей", "cpu": 1},
+]
+
+WORKER_FILE = Path(__file__).with_name("worker.py")
 
 
-def read_int(prompt, default):
-    value = input(f"{prompt} [{default}]: ").strip()
-    return int(value) if value else default
+def ask_number(message, default, number_type):
+    """Считывает число. Если пользователь нажал Enter, берёт значение по умолчанию."""
+    answer = input(f"{message} [{default}]: ").strip()
+    if not answer:
+        return default
+
+    value = number_type(answer.replace(",", ".") if number_type is float else answer)
+    if value < 0:
+        raise ValueError("Значение не может быть отрицательным.")
+    return value
 
 
-def read_float(prompt, default):
-    value = input(f"{prompt} [{default}]: ").strip().replace(",", ".")
-    return float(value) if value else default
+def get_settings():
+    """Запрашивает количество пользователей и время обработки запросов."""
+    print("\nКоличество пользователей:")
+    counts = [
+        ask_number("Регистрация", 3, int),
+        ask_number("Главная страница", 3, int),
+        ask_number("Список пользователей", 3, int),
+    ]
+
+    print("\nВремя обработки одного запроса в секундах:")
+    durations = [
+        ask_number("Регистрация", 1.0, float),
+        ask_number("Главная страница", 0.7, float),
+        ask_number("Список пользователей", 0.3, float),
+    ]
+    return counts, durations
 
 
-def make_requests(counts, times):
+def create_requests(counts, durations):
+    """Создаёт общий список запросов с понятными полями."""
     requests = []
     request_id = 1
-    for action_id in (1, 2, 3):
-        name, cpu = ACTIONS[action_id]
-        for _ in range(counts[action_id - 1]):
-            requests.append((request_id, name, times[action_id - 1], cpu))
+
+    for action, count, duration in zip(ACTIONS, counts, durations):
+        for _ in range(count):
+            requests.append({
+                "id": request_id,
+                "name": action["name"],
+                "duration": duration,
+            })
             request_id += 1
+
     return requests
 
 
-def sequential(requests):
+def show_result(request):
+    print(f"Запрос {request['id']}: {request['name']} — выполнен")
+
+
+def run_sequential(requests):
+    """Выполняет запросы один за другим."""
     print("\nПоследовательная обработка:")
-    for request_id, name, duration, _ in requests:
-        time.sleep(duration)
-        print(f"Запрос {request_id}: {name} — выполнен")
+    for request in requests:
+        time.sleep(request["duration"])
+        show_result(request)
 
 
-def subprocess_mode(requests):
-    print("\nПараллельная обработка (subprocess):")
-    # Три процесса обрабатывают три вида действий одновременно.
-    processes = []
-    first_id = 1
-    for action_id in (1, 2, 3):
-        name, _ = ACTIONS[action_id]
-        group = [r for r in requests if r[1] == name]
-        if group:
-            processes.append(subprocess.Popen(
-                [sys.executable, str(WORKER), name, str(first_id),
-                 str(len(group)), str(group[0][2])],
-                stdout=subprocess.PIPE, text=True
-            ))
-        first_id += len(group)
-    for process in processes:
-        output, _ = process.communicate()
-        print(output.strip())
+def run_worker(requests):
+    """Функция одного потока: имитирует выполнение одного запроса."""
+    time.sleep(requests["duration"])
+    return f"Запрос {requests['id']}: {requests['name']} — выполнен"
 
 
-def thread_task(request):
-    request_id, name, duration, _ = request
-    time.sleep(duration)
-    return f"Запрос {request_id}: {name} — выполнен"
-
-
-def threads_mode(requests):
-    print("\nПараллельная обработка (threads):")
-    with ThreadPoolExecutor(max_workers=max(1, min(32, len(requests)))) as executor:
-        for result in executor.map(thread_task, requests):
+def run_threads(requests):
+    """Запускает запросы в пуле потоков."""
+    print("\nОбработка с помощью threads:")
+    with ThreadPoolExecutor(max_workers=min(32, len(requests))) as pool:
+        for result in pool.map(run_worker, requests):
             print(result)
 
 
-async def async_task(request):
-    request_id, name, duration, _ = request
-    await asyncio.sleep(duration)
-    return f"Запрос {request_id}: {name} — выполнен"
+def run_subprocesses(requests):
+    """Запускает по отдельному процессу для каждого типа запросов."""
+    print("\nОбработка с помощью subprocess:")
+    processes = []
+
+    for action in ACTIONS:
+        group = [request for request in requests if request["name"] == action["name"]]
+        if not group:
+            continue
+
+        # Один дочерний процесс последовательно выполняет свою группу запросов.
+        process = subprocess.Popen(
+            [
+                sys.executable,
+                str(WORKER_FILE),
+                action["name"],
+                str(group[0]["id"]),
+                str(len(group)),
+                str(group[0]["duration"]),
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        processes.append(process)
+
+    for process in processes:
+        output, errors = process.communicate()
+        if process.returncode != 0:
+            raise RuntimeError(errors.strip() or "Ошибка дочернего процесса.")
+        print(output, end="")
 
 
-async def asyncio_mode(requests):
-    print("\nПараллельная обработка (asyncio):")
-    results = await asyncio.gather(*(async_task(request) for request in requests))
+async def async_worker(request):
+    """Асинхронно имитирует выполнение одного запроса."""
+    await asyncio.sleep(request["duration"])
+    return f"Запрос {request['id']}: {request['name']} — выполнен"
+
+
+async def run_async(requests):
+    """Запускает все запросы как асинхронные задачи."""
+    print("\nОбработка с помощью asyncio:")
+    results = await asyncio.gather(
+        *(async_worker(request) for request in requests)
+    )
     for result in results:
         print(result)
 
 
-def measure(function):
+def measure_time(title, function):
+    """Запускает функцию и возвращает время её выполнения."""
+    print(f"\n--- {title} ---")
     start = time.perf_counter()
     function()
     elapsed = time.perf_counter() - start
-    print(f"Время выполнения: {elapsed:.3f} сек.")
+    print(f"Время: {elapsed:.3f} сек.")
     return elapsed
 
 
 def main():
-    print("МОДЕЛИРОВАНИЕ НАГРУЗКИ СЕРВЕРА")
-    print("Введите количество пользователей для каждого действия.")
-    counts = [read_int("U1 — регистрация", 3),
-              read_int("U2 — главная страница", 3),
-              read_int("U3 — список пользователей", 3)]
-    if any(value < 0 for value in counts):
-        raise ValueError("Количество пользователей не может быть отрицательным")
+    print("ЛАБОРАТОРНАЯ РАБОТА №4 — ПАРАЛЛЕЛЬНЫЕ АЛГОРИТМЫ")
+    counts, durations = get_settings()
+    requests = create_requests(counts, durations)
 
-    print("\nВведите время обработки одного запроса в секундах.")
-    times = [read_float("T1 — регистрация", 1.0),
-             read_float("T2 — главная страница", 0.7),
-             read_float("T3 — список пользователей", 0.3)]
-    if any(value < 0 for value in times):
-        raise ValueError("Время обработки не может быть отрицательным")
-
-    requests = make_requests(counts, times)
     if not requests:
-        print("Нет запросов для обработки.")
+        print("Запросов нет. Завершение программы.")
         return
 
-    print("\nИсходные параметры:")
-    for i, action_id in enumerate((1, 2, 3)):
-        name, cpu = ACTIONS[action_id]
-        print(f"{name}: пользователей = {counts[i]}, T = {times[i]:.2f} сек., CPU ≈ {cpu * 100:.0f}%")
+    print("\nПараметры модели:")
+    for action, count, duration in zip(ACTIONS, counts, durations):
+        print(
+            f"- {action['name']}: {count} пользователей, "
+            f"{duration:.2f} сек., условная нагрузка CPU — {action['cpu']}%"
+        )
 
+    # Это имитация времени ожидания. Реальная загрузка CPU не измеряется.
     results = []
-    results.append(("Последовательно", measure(lambda: sequential(requests))))
-    results.append(("subprocess", measure(lambda: subprocess_mode(requests))))
-    results.append(("threads", measure(lambda: threads_mode(requests))))
-    results.append(("asyncio", measure(lambda: asyncio.run(asyncio_mode(requests)))))
+    results.append(("Последовательно", measure_time(
+        "Последовательный режим", lambda: run_sequential(requests)
+    )))
+    results.append(("subprocess", measure_time(
+        "Дочерние процессы", lambda: run_subprocesses(requests)
+    )))
+    results.append(("threads", measure_time(
+        "Потоки", lambda: run_threads(requests)
+    )))
+    results.append(("asyncio", measure_time(
+        "Асинхронный режим", lambda: asyncio.run(run_async(requests))
+    )))
 
     print("\nСРАВНЕНИЕ ВРЕМЕНИ")
     for name, elapsed in results:
         print(f"{name:18} {elapsed:.3f} сек.")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (ValueError, OSError, RuntimeError) as error:
+        print(f"Ошибка: {error}", file=sys.stderr)
+        sys.exit(1)
