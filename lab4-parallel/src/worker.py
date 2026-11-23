@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Обработчик группы одинаковых запросов для режима subprocess."""
 import sys
 import time
@@ -13,6 +12,3 @@ def main():
         time.sleep(duration)
         print(f"Запрос {request_id}: {action} — выполнен")
 
-
-if __name__ == "__main__":
-    main()
