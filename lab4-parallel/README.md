@@ -37,7 +37,7 @@ make run
 
 ## Запуск в Google Colab
 
-Откройте файл [lab4_parallel_colab.ipynb](colab/lab4_parallel_colab.ipynb) в репозитории и нажмите **Open in Colab** (или скачайте ноутбук и загрузите его в Google Colab).
+[Открыть ноутбук сразу в Google Colab](https://colab.research.google.com/github/EvgeniiVasiliev123/C-and-Unix-Algorythm-s/blob/lab4-parallel/lab4-parallel/colab/lab4_parallel_colab.ipynb).
 
 В ноутбуке все четыре способа обработки уже реализованы. Для изменения эксперимента отредактируйте значения `USER_COUNTS` и `REQUEST_TIMES` в первой ячейке с кодом. Ничего дополнительно устанавливать или загружать не требуется.
 
