@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """ЛР №4. Сравнение последовательной и параллельной обработки запросов."""
 import asyncio
 import subprocess
@@ -132,11 +131,3 @@ def main():
     print("\nСРАВНЕНИЕ ВРЕМЕНИ")
     for name, elapsed in results:
         print(f"{name:18} {elapsed:.3f} сек.")
-
-
-if __name__ == "__main__":
-    try:
-        main()
-    except (ValueError, OSError) as error:
-        print(f"Ошибка: {error}", file=sys.stderr)
-        sys.exit(1)
