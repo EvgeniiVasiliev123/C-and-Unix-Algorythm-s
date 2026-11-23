@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
-"""Обработчик группы одинаковых запросов для режима subprocess."""
+"""Дочерний процесс: последовательно выполняет группу однотипных запросов."""
+
 import sys
 import time
 
 
 def main():
-    action = sys.argv[1]
-    first_id = int(sys.argv[2])
-    count = int(sys.argv[3])
+    action_name = sys.argv[1]
+    first_request_id = int(sys.argv[2])
+    request_count = int(sys.argv[3])
     duration = float(sys.argv[4])
-    for request_id in range(first_id, first_id + count):
+
+    for request_id in range(first_request_id, first_request_id + request_count):
         time.sleep(duration)
-        print(f"Запрос {request_id}: {action} — выполнен")
+        print(f"Запрос {request_id}: {action_name} — выполнен")
 
 
 if __name__ == "__main__":
