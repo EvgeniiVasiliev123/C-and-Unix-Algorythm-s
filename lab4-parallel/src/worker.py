@@ -16,5 +16,3 @@ def main():
         print(f"Запрос {request_id}: {action_name} — выполнен")
 
 
-if __name__ == "__main__":
-    main()
